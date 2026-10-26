@@ -75,7 +75,9 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];	       // Process name (debugging)
   int numTicks;		       //Counts the number of times a process has been scheduled
-
+  int tickets;       // Number of CPU tickets assigned to the proccess
+  int stride; //Amount the scheduling progress increases
+  int pass;  //Accumulated scheduling progress
 };
 
 // Process memory is laid out contiguously, low addresses first:

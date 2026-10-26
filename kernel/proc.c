@@ -47,6 +47,9 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->numTicks = 0;
+  p->tickets = DEFAULT_TICKETS;
+  p->stride = STRIDE_BIG / p->tickets;
+  p->pass = 0;
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
@@ -145,6 +148,8 @@ fork(void)
   }
   np->sz = proc->sz;
   np->parent = proc;
+  np->tickets = proc->tickets;
+  np->stride = proc->stride;
   *np->tf = *proc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
