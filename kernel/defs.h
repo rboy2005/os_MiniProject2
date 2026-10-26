@@ -112,6 +112,7 @@ void            wakeup(void*);
 void            yield(void);
 int 		myps(void);
 int 		getpinfo(struct pstat*);
+int		settickets(int);
 // swtch.S
 void            swtch(struct context**, struct context*);
 

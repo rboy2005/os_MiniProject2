@@ -22,11 +22,14 @@ int main(int argc, char *argv[])
         if (abbreviate && !proc_info.inuse[i])
             continue;
         printf(1,
-               "Use: %d  Size: %d  PID: %d  Ticks: %d\n",
-               proc_info.inuse[i],
-               proc_info.size[i],
-               proc_info.pid[i],
-               proc_info.ticks[i]);
+               "Use: %d  Size: %d  PID: %d Tickets: %d Stride: %d Pass: %d Ticks: %d\n",
+                proc_info.inuse[i],
+                proc_info.size[i],
+                proc_info.pid[i],
+		proc_info.tickets[i],
+		proc_info.stride[i],
+		proc_info.pass[i],
+                proc_info.ticks[i]);
     }
     exit();
 }

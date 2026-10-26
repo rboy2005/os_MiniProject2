@@ -58,11 +58,11 @@ found:
     return 0;
   }
   sp = p->kstack + KSTACKSIZE;
-  
+
   // Leave room for trap frame.
   sp -= sizeof *p->tf;
   p->tf = (struct trapframe*)sp;
-  
+
   // Set up new context to start executing at forkret,
   // which returns to trapret.
   sp -= 4;
@@ -458,7 +458,7 @@ myps(void)
   struct proc *p;
   char *state;
   acquire(&ptable.lock);
-  cprintf("PID\tState\t\tSize\tName\n");
+  cprintf("PID\tState\t\tSize\tTickets\tStride\tPass\tName\n");
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state == UNUSED)
           continue;
@@ -475,7 +475,7 @@ myps(void)
     else
       state = "OTHER";
 
-  cprintf("%d\t%s\t%d\t%s\n", p->pid, state, p->sz, p->name);
+    cprintf("%d\t%s\t%d\t%d\t%d\t%d\t%s\n", p->pid, state, p->sz, p->tickets, p->stride, p->pass, p->name);
   }
   release(&ptable.lock);
   return 0;
@@ -491,8 +491,18 @@ int getpinfo(struct pstat *ps)
           ps->inuse[i] = (p->state != UNUSED);
           ps->pid[i] = p->pid;
           ps->ticks[i] = p->numTicks;
+	  ps->tickets[i] = p->tickets;
+	  ps->stride[i] = p->stride;
+	  ps->pass[i] = p->pass;
           ps->size[i] = p->sz;
      }
      release(&ptable.lock);
      return 0;
+}
+int settickets(int n){
+  acquire(&ptable.lock);
+  proc->tickets = n;
+  proc->stride = STRIDE_BIG / proc->tickets;
+  release(&ptable.lock);
+  return 0;
 }

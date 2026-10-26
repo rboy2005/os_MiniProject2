@@ -31,6 +31,7 @@ int SecondPart(void);
 int ThirdPart(void);
 int myps(void);
 int getpinfo(struct pstat*);
+int settickets(int);
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);

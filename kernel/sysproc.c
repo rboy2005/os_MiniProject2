@@ -120,3 +120,12 @@ int sys_getpinfo(void)
 	ps = (struct pstat *)addr;
 	return getpinfo(ps);
 }
+int sys_settickets(void)
+{
+  int n;
+  if(argint(0, &n) < 0)
+    return -1;
+  if(n < 10 || n > 200 || n % 10 != 0)
+    return -1;
+  return settickets(n);
+}
