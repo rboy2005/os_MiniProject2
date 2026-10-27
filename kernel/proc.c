@@ -15,6 +15,15 @@
 #define SCHED_NAME "RR"
 #endif
 
+static uint rseed = 2463534242; // any nonzero starting value
+static uint
+rand(void)
+{
+ rseed ^= rseed << 13;
+ rseed ^= rseed >> 17;
+ rseed ^= rseed << 5;
+ return rseed;
+}
 
 struct {
   struct spinlock lock;
@@ -279,7 +288,25 @@ scheduler(void)
     sti();
     
   #if defined(SCHED_LOTTERY)
-     //Phase 4 goes here  
+     struct proc *p;
+     int total = 0;
+     acquire(&ptable.lock);
+     // TODO 1: total = sum of tickets of all RUNNABLE processes
+     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+       if (p->state == RUNNABLE)
+         total += p->tickets;
+     }
+     if(total > 0){
+       winner = rand() % total; // a number from 0 to total-1
+       counter = 0;
+       // TODO 2: walk ptable. For each RUNNABLE p:
+       // add p->tickets to counter;
+       // if counter > winner, run p with the same lines
+       // as Lab 2 (proc = p; switchuvm(p); p->state = RUNNING;
+       // p->numTicks += 1; swtch(...); switchkvm(); proc = 0;)
+       // and then break out of the loop.
+     }
+     release(&ptable.lock) 
   #elif defined(SCHED_STRIDE)
       //Phase 5 goes here
   #else
