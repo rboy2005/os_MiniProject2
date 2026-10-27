@@ -15,6 +15,7 @@
 #define SCHED_NAME "RR"
 #endif
 
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -272,7 +273,6 @@ wait(void)
 void
 scheduler(void)
 {
-  struct proc *p;
 
   for(;;){
     // Enable interrupts on this processor.
@@ -283,6 +283,7 @@ scheduler(void)
   #elif defined(SCHED_STRIDE)
       //Phase 5 goes here
   #else
+     struct proc *p;
       // Loop over process table looking for process to run.
       acquire(&ptable.lock);
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -306,8 +307,8 @@ scheduler(void)
         proc = 0;
       }
       release(&ptable.lock);
+      #endif
     }
-  #endif
 }
 
 // Enter scheduler.  Must hold only ptable.lock
@@ -395,9 +396,11 @@ wakeup1(void *chan)
 {
   struct proc *p;
 
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state == SLEEPING && p->chan == chan){
       p->state = RUNNABLE;
+    }
+  }
 }
 
 // Wake up all processes sleeping on chan.
