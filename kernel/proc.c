@@ -7,6 +7,14 @@
 #include "spinlock.h"
 #include "pstat.h"
 
+#if defined(SCHED_LOTTERY)
+#define SCHED_NAME "LOTTERY"
+#elif defined(SCHED_STRIDE)
+#define SCHED_NAME "STRIDE"
+#else
+#define SCHED_NAME "RR"
+#endif
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -101,7 +109,9 @@ userinit(void)
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
-
+  
+  cprintf("scheduler: %s\n", SCHED_NAME);
+    
   p->state = RUNNABLE;
   release(&ptable.lock);
 }
@@ -267,32 +277,37 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     sti();
+    
+  #if defined(SCHED_LOTTERY)
+     //Phase 4 goes here  
+  #elif defined(SCHED_STRIDE)
+      //Phase 5 goes here
+  #else
+      // Loop over process table looking for process to run.
+      acquire(&ptable.lock);
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state != RUNNABLE)
+          continue;
 
-    // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+        p->numTicks += 1;  //updating the number of times schedule in cpu
 
-      p->numTicks += 1;  //updating the number of times schedule in cpu
+        swtch(&cpu->scheduler, proc->context);
+        switchkvm();
 
-      swtch(&cpu->scheduler, proc->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        proc = 0;
+      }
+      release(&ptable.lock);
     }
-    release(&ptable.lock);
-
-  }
+  #endif
 }
 
 // Enter scheduler.  Must hold only ptable.lock
