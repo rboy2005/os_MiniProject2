@@ -286,10 +286,11 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     sti();
-    
+
   #if defined(SCHED_LOTTERY)
      struct proc *p;
      int total = 0;
+     int counter = 0;
      acquire(&ptable.lock);
      // TODO 1: total = sum of tickets of all RUNNABLE processes
      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -297,7 +298,7 @@ scheduler(void)
          total += p->tickets;
      }
      if(total > 0){
-       winner = rand() % total; // a number from 0 to total-1
+       int winner = rand() % total; // a number from 0 to total-1
        counter = 0;
        // TODO 2: walk ptable. For each RUNNABLE p:
        // add p->tickets to counter;
@@ -305,8 +306,28 @@ scheduler(void)
        // as Lab 2 (proc = p; switchuvm(p); p->state = RUNNING;
        // p->numTicks += 1; swtch(...); switchkvm(); proc = 0;)
        // and then break out of the loop.
+      for (p = ptable.proc; p<&ptable.proc[NPROC]; p++){
+        if(p->state == RUNNABLE){
+	  counter+=p->tickets;
+	  if(counter > winner){
+	    proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+
+            p->numTicks += 1;  //updating the number of times schedule in cpu
+
+            swtch(&cpu->scheduler, proc->context);
+            switchkvm();
+
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            proc = 0;
+	   break;
+	  }
+       }
      }
-     release(&ptable.lock) 
+     }
+     release(&ptable.lock);
   #elif defined(SCHED_STRIDE)
       //Phase 5 goes here
   #else

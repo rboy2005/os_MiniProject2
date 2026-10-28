@@ -16,7 +16,7 @@
 // Fetch the int at addr from process p.
 extern int sys_SecondPart(void);
 extern int sys_ThirdPart(void);
-
+extern int sys_settickets(void);
 int counterB=0;
 int counterC=0;
 
@@ -113,7 +113,8 @@ static int (*syscalls[])(void) = {
 [SYS_SecondPart] sys_SecondPart,
 [SYS_ThirdPart] sys_ThirdPart,
 [SYS_myps] sys_myps,
-[SYS_getpinfo] sys_getpinfo
+[SYS_getpinfo] sys_getpinfo,
+[SYS_settickets] sys_settickets,
 };
 
 // Called on a syscall trap. Checks that the syscall number (passed via eax)

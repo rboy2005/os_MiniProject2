@@ -18,6 +18,7 @@ USER_PROGS := \
 	myfirst\
 	ps\
 	rm\
+	schedtest\
 	sh\
 	store\
 	stressfs\
