@@ -15,15 +15,6 @@
 #define SCHED_NAME "RR"
 #endif
 
-static uint rseed = 2463534242; // any nonzero starting value
-static uint
-rand(void)
-{
- rseed ^= rseed << 13;
- rseed ^= rseed >> 17;
- rseed ^= rseed << 5;
- return rseed;
-}
 
 struct {
   struct spinlock lock;
@@ -279,16 +270,28 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+
+#if defined(SCHED_LOTTERY)
+static uint rseed = 2463534242; // any nonzero starting value
+static uint
+rand(void)
+{
+ rseed ^= rseed << 13;
+ rseed ^= rseed >> 17;
+ rseed ^= rseed << 5;
+ return rseed;
+}
+#endif
+
 void
 scheduler(void)
 {
-
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
   #if defined(SCHED_LOTTERY)
-     struct proc *p;
+    struct proc *p;
      int total = 0;
      int counter = 0;
      acquire(&ptable.lock);
@@ -329,7 +332,37 @@ scheduler(void)
      }
      release(&ptable.lock);
   #elif defined(SCHED_STRIDE)
-      //Phase 5 goes here
+     struct proc *p;
+     struct proc *best = 0;
+     acquire(&ptable.lock);
+     
+     // TODO 1: walk ptable. Among the RUNNABLE processes,
+     // keep in best the one with the smallest pass.
+     for (p = ptable.proc; p<&ptable.proc[NPROC]; p++){
+        if(p->state == RUNNABLE){
+           if(best == 0 || p->pass < best->pass){
+            best = p;
+           }
+        }
+     }
+     if(best){
+       p = best;
+     // TODO 2: advance its pass by its stride
+     // then run p with the same lines as Lab 2
+       p->pass += p->stride;
+       proc = p;
+       switchuvm(p);
+       p->state = RUNNING;
+       p->numTicks += 1;  //updating the number of times schedule in cpu
+       swtch(&cpu->scheduler, proc->context);
+       switchkvm();
+
+       // Process is done running for now.
+       // It should have changed its p->state before coming back.
+       proc = 0;
+   }
+   release(&ptable.lock);
+
   #else
      struct proc *p;
       // Loop over process table looking for process to run.
