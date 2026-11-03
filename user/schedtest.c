@@ -11,7 +11,10 @@ int main(int argc, char *argv[])
 		rc = fork();
 		if (!rc){
 			// Child process
-			settickets(tickets);
+			if(settickets(tickets) == -1){
+                printf(1, "Error: settickets failed\n");
+                exit();
+            }
 			printf(1,"Child %d PID: %d Tickets: %d\n",i,getpid(),tickets);
 			for(;;){}
 		}
