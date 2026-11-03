@@ -6,6 +6,7 @@ USER_PROGS := \
 	childrentester\
 	echo\
 	forktest\
+	gamer\
 	grep\
 	tester\
 	testerB\
