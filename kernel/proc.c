@@ -29,6 +29,24 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+static int lastpass = 0;
+
+static int
+minpass(void){
+	struct proc *p;
+	int minimum = lastpass;
+	int found = 0;
+for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state == RUNNABLE){
+	if(!found || p->pass < minimum){
+		minimum = p->pass;
+}
+found=1;
+    }
+}
+return minimum;
+}
+
 void
 pinit(void)
 {
@@ -58,7 +76,7 @@ found:
   p->numTicks = 0;
   p->tickets = DEFAULT_TICKETS;
   p->stride = STRIDE_BIG / p->tickets;
-  p->pass = 0;
+  p->pass = minpass();
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
@@ -350,6 +368,7 @@ scheduler(void)
      // TODO 2: advance its pass by its stride
      // then run p with the same lines as Lab 2
        p->pass += p->stride;
+       lastpass = p->pass;
        proc = p;
        switchuvm(p);
        p->state = RUNNING;
@@ -479,6 +498,10 @@ wakeup1(void *chan)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state == SLEEPING && p->chan == chan){
+	int minimum = minpass();
+	if(p->pass < minimum){
+	p->pass = minimum;
+}
       p->state = RUNNABLE;
     }
   }
