@@ -15,6 +15,7 @@ USER_PROGS := \
 	ln\
 	ls\
 	mkdir\
+	monitor\
 	myfirst\
 	ps\
 	rm\
